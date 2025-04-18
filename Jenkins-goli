@@ -1,0 +1,32 @@
+pipeline{
+    agent any
+    
+    stages{
+        stage("Git Checkout"){
+            steps{
+                git credentialsId: 'anilgoli', url: 'https://github.com/anilkumargoli/https-github.com-srinicloud87-myweb.git'
+            }
+        }
+        stage("Maven Build"){
+            steps{
+                sh "mvn clean package"
+                sh "mv target/*.war target/myweb.war"
+            }
+        }
+        stage("deploy-dev"){
+            steps{
+                sshagent(['tomcat']) {
+                sh """
+                    scp -o StrictHostKeyChecking=no target/myweb.war  ec2-user@50.50.0.224:/home/ec2-user/tomcat/webapps/
+                    
+                    ssh ec2-user@50.50.0.224 /home/ec2-user/tomcat/bin/shutdown.sh
+                    
+                    ssh ec2-user@50.50.0.224 /home/ec2-user/tomcat/bin/startup.sh
+                
+                """
+            }
+            
+            }
+        }
+    }
+}
